@@ -108,13 +108,29 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
             const y = mouseState.current.mouseY;
             if (
               x >= 0 && x < GRID_WIDTH &&
-              y >= 0 && y < GRID_HEIGHT &&
-              !prevGrid[y][x]
+              y >= 0 && y < GRID_HEIGHT
             ) {
-              // 이미 입자가 없는 셀에만 새 입자 생성
-              nextGrid = prevGrid.map((row, j) =>
-                row.map((cell, i) => (i === x && j === y ? { type: currentMaterial } : cell))
-              );
+              if (currentMaterial === 'STONE') {
+                // 4x4 크기로 STONE 생성
+                nextGrid = prevGrid.map((row, j) =>
+                  row.map((cell, i) => {
+                    if (
+                      i >= x && i < x + 4 &&
+                      j >= y && j < y + 4 &&
+                      i < GRID_WIDTH &&
+                      j < GRID_HEIGHT
+                    ) {
+                      return { type: 'STONE' };
+                    }
+                    return cell;
+                  })
+                );
+              } else if (!prevGrid[y][x]) {
+                // 기존 입자가 없을 때만 새 입자 생성
+                nextGrid = prevGrid.map((row, j) =>
+                  row.map((cell, i) => (i === x && j === y ? { type: currentMaterial } : cell))
+                );
+              }
             }
           }
           // 시뮬레이션
