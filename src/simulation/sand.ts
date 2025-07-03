@@ -22,15 +22,23 @@ export function handleSand(grid: (Particle | null)[][], newGrid: (Particle | nul
     newGrid[y + 1][x] = p;
     return;
   }
-  // 아래가 물이면 위치 교환 (단, 현재 셀에 이미 newGrid에 입자가 없을 때만)
+  // 아래가 물이면 위치 교환 (단, 현재 셀과 아래 셀 모두 newGrid에 입자가 없을 때만)
   if (
     isInBounds(x, y + 1) &&
     grid[y + 1][x]?.type === 'WATER' &&
     !newGrid[y + 1][x] &&
     !newGrid[y][x]
   ) {
-    newGrid[y + 1][x] = p;
-    newGrid[y][x] = grid[y + 1][x];
+    // 아래 물 입자가 이미 이번 프레임에 이동한 적이 있는지 체크
+    // (newGrid에 grid[y+1][x]가 이미 있으면 복제 방지)
+    let alreadyMoved = false;
+    if (y + 2 < GRID_HEIGHT && newGrid[y + 2][x] === grid[y + 1][x]) {
+      alreadyMoved = true;
+    }
+    if (!alreadyMoved) {
+      newGrid[y + 1][x] = p;
+      newGrid[y][x] = grid[y + 1][x];
+    }
     return;
   }
   // 대각선 아래
