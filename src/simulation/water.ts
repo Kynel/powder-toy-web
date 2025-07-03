@@ -19,20 +19,14 @@ export function handleWater(grid: (Particle | null)[][], newGrid: (Particle | nu
     }
   }
   if (moved) return;
-  // 좌우로 최대 3칸까지 흐름(단 한 번만)
+  // 좌우로 1칸만 흐름
   for (const dir of shuffle([-1, 1])) {
-    for (let dist = 1; dist <= 3; dist++) {
-      const nx = x + dir * dist;
-      if (!isInBounds(nx, y)) break;
-      if (isEmpty(grid, newGrid, nx, y)) {
-        newGrid[y][nx] = p;
-        moved = true;
-        break;
-      }
-      // 아래가 비어있으면 더 이상 흐르지 않음
-      if (isInBounds(nx, y + 1) && isEmpty(grid, newGrid, nx, y + 1)) break;
+    const nx = x + dir;
+    if (isEmpty(grid, newGrid, nx, y)) {
+      newGrid[y][nx] = p;
+      moved = true;
+      break;
     }
-    if (moved) break;
   }
   if (!moved) newGrid[y][x] = p;
 } 
