@@ -147,5 +147,23 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
     };
   }, [currentMaterial, onExplosion]);
 
-  return <div ref={canvasRef} style={{ width: WIDTH, height: HEIGHT }} />;
+  return (
+    <div
+      ref={canvasRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        maxWidth: WIDTH,
+        maxHeight: HEIGHT,
+        aspectRatio: `${WIDTH} / ${HEIGHT}`,
+        margin: 'auto',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+        background: 'transparent',
+        touchAction: 'none',
+      }}
+    />
+  );
 }; 

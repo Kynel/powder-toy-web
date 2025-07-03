@@ -1,27 +1,23 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Powder Toy Web</title>
+    <title>powder-toy-web</title>
     <style>
-      /* CSS Reset */
       html, body, #root {
         width: 100%;
         height: 100%;
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-      }
-      *, *::before, *::after {
-        box-sizing: inherit;
-        margin: 0;
-        padding: 0;
+        overflow: hidden;
+        background: #000;
+        touch-action: none;
       }
       body {
-        min-height: 100vh;
-        min-width: 100vw;
-        background: #000;
+        -webkit-tap-highlight-color: transparent;
       }
     </style>
   </head>

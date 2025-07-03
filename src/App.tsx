@@ -16,7 +16,21 @@ function App() {
   const [currentMaterial, setCurrentMaterial] = useState<Material>("SAND");
 
   return (
-    <div style={{ minHeight: "100vh", width: "100vw", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        minWidth: '100vw',
+        width: '100vw',
+        height: '100vh',
+        background: '#000',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+      }}
+    >
       {/* 머티리얼 선택 UI */}
       <div style={{ position: "absolute", top: 24, left: 24, display: "flex", gap: 12, zIndex: 10 }}>
         {MATERIALS.map((mat) => (
