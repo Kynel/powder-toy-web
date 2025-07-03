@@ -111,12 +111,12 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
               y >= 0 && y < GRID_HEIGHT
             ) {
               if (currentMaterial === 'STONE') {
-                // 4x4 크기로 STONE 생성
+                // 2x2 크기로 STONE 생성
                 nextGrid = prevGrid.map((row, j) =>
                   row.map((cell, i) => {
                     if (
-                      i >= x && i < x + 4 &&
-                      j >= y && j < y + 4 &&
+                      i >= x && i < x + 2 &&
+                      j >= y && j < y + 2 &&
                       i < GRID_WIDTH &&
                       j < GRID_HEIGHT
                     ) {
