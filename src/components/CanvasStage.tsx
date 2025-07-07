@@ -163,10 +163,29 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
             for (let x = 0; x < GRID_WIDTH; x++) {
               const particle = updatedGrid[y][x];
               if (particle) {
-                const color = PARTICLE_TYPE[particle.type].color;
-                graphics.beginFill(color);
-                graphics.drawRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                graphics.endFill();
+                if (particle.type === 'EXPLOSIVE') {
+                  // TNT 패턴 렌더링 (빨간색과 검은색 체크패턴)
+                  const isRedPattern = (x + y) % 2 === 0;
+                  const tntColor = isRedPattern ? 0xff0000 : 0x000000;
+                  graphics.beginFill(tntColor);
+                  graphics.drawRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                  graphics.endFill();
+                  
+                  // 도화선이 거의 다 타면 깜빡이는 효과
+                  if (particle.fuse !== undefined && particle.fuse < 60) {
+                    const shouldBlink = Math.floor(particle.fuse / 5) % 2 === 0;
+                    if (shouldBlink) {
+                      graphics.beginFill(0xffffff);
+                      graphics.drawRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                      graphics.endFill();
+                    }
+                  }
+                } else {
+                  const color = PARTICLE_TYPE[particle.type].color;
+                  graphics.beginFill(color);
+                  graphics.drawRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                  graphics.endFill();
+                }
               }
             }
           }

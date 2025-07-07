@@ -3,6 +3,7 @@ import { GRID_WIDTH, GRID_HEIGHT } from '../config/constants';
 import { shuffle } from '../utils/common';
 import { handleSand } from './sand';
 import { handleWater } from './water';
+import { handleExplosive, handleExplosionParticle } from './explosive';
 
 // 성능 최적화를 위해 order 배열을 한 번만 생성
 let shuffleOrder: [number, number][] | null = null;
@@ -39,6 +40,14 @@ export function stepSimulation(grid: (Particle | null)[][]): (Particle | null)[]
         break;
       case 'WATER':
         handleWater(grid, newGrid, x, y, particle);
+        break;
+      case 'EXPLOSIVE':
+        handleExplosive(grid, newGrid, x, y, particle);
+        break;
+      case 'EXPLOSION_WHITE':
+      case 'EXPLOSION_YELLOW':
+      case 'EXPLOSION_RED':
+        handleExplosionParticle(grid, newGrid, x, y, particle);
         break;
     }
   }
