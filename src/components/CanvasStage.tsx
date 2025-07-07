@@ -13,6 +13,7 @@ interface MouseState {
   isMouseDown: boolean;
   mouseX: number;
   mouseY: number;
+  spawnCounter: number;
 }
 
 function createEmptyGrid(): (Particle | null)[][] {
@@ -45,7 +46,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
   const appRef = useRef<PIXI.Application | null>(null);
   const [grid, setGrid] = useState<(Particle | null)[][]>(createEmptyGrid);
   const gridRef = useRef(grid);
-  const mouseState = useRef<MouseState>({ isMouseDown: false, mouseX: 0, mouseY: 0 });
+  const mouseState = useRef<MouseState>({ isMouseDown: false, mouseX: 0, mouseY: 0, spawnCounter: 0 });
 
   useEffect(() => {
     gridRef.current = grid;
@@ -117,15 +118,18 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
         mouseState.current.mouseX = x;
         mouseState.current.mouseY = y;
         mouseState.current.isMouseDown = true;
+        mouseState.current.spawnCounter = 0;
         trySpawnParticle(x, y);
       });
 
       canvas.addEventListener("pointerup", () => {
         mouseState.current.isMouseDown = false;
+        mouseState.current.spawnCounter = 0;
       });
 
       canvas.addEventListener("pointerleave", () => {
         mouseState.current.isMouseDown = false;
+        mouseState.current.spawnCounter = 0;
       });
 
       canvas.addEventListener("pointermove", (e) => {
@@ -149,9 +153,17 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
 
       // 시뮬레이션 및 렌더링 루프
       app.ticker.add(() => {
-        // 마우스가 눌려진 상태면 연속적으로 파티클 생성
+        // 마우스가 눌려진 상태면 일정 간격으로 파티클 생성
         if (mouseState.current.isMouseDown) {
-          trySpawnParticle(mouseState.current.mouseX, mouseState.current.mouseY);
+          mouseState.current.spawnCounter++;
+          
+          // 폭발물은 10프레임마다, 다른 파티클은 2프레임마다 생성
+          const spawnInterval = currentMaterial === 'EXPLOSIVE' ? 10 : 2;
+          
+          if (mouseState.current.spawnCounter >= spawnInterval) {
+            trySpawnParticle(mouseState.current.mouseX, mouseState.current.mouseY);
+            mouseState.current.spawnCounter = 0;
+          }
         }
 
         setGrid((prevGrid) => {

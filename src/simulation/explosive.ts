@@ -33,6 +33,20 @@ export function handleExplosive(
     return;
   }
   
+  // 아래가 물이면 물을 위로 보내고 폭발물은 아래로 (가라앉기)
+  const belowParticle = grid[y + 1]?.[x];
+  if (
+    isInBounds(x, y + 1, GRID_WIDTH, GRID_HEIGHT) &&
+    belowParticle?.type === 'WATER' &&
+    !newGrid[y + 1][x] &&
+    !newGrid[y][x]
+  ) {
+    // 물을 위로 보내고 폭발물은 아래로
+    newGrid[y + 1][x] = { ...particle };
+    newGrid[y][x] = { ...belowParticle };
+    return;
+  }
+  
   // 대각선 아래로 이동
   for (const dx of shuffle([-1, 1])) {
     const nx = x + dx;
@@ -41,6 +55,19 @@ export function handleExplosive(
     // 대각선 아래가 빈 공간이면 이동
     if (isEmpty(grid, newGrid, nx, ny)) {
       newGrid[ny][nx] = { ...particle };
+      return;
+    }
+    
+    // 대각선 아래가 물이면 물을 위로 보내고 폭발물은 아래로
+    const diagonalParticle = grid[ny]?.[nx];
+    if (
+      isInBounds(nx, ny, GRID_WIDTH, GRID_HEIGHT) &&
+      diagonalParticle?.type === 'WATER' &&
+      !newGrid[ny][nx] &&
+      !newGrid[y][x]
+    ) {
+      newGrid[ny][nx] = { ...particle };
+      newGrid[y][x] = { ...diagonalParticle };
       return;
     }
   }
@@ -83,7 +110,7 @@ export function handleExplosionParticle(
 }
 
 function explode(grid: (Particle | null)[][], centerX: number, centerY: number): void {
-  const explosionRadius = 10; // 더 강력한 폭발 범위
+  const explosionRadius = 12; // 폭발 범위를 더 크게 확장
   const scatteredParticles: Array<{particle: Particle, x: number, y: number, vx: number, vy: number}> = [];
   
   // 1단계: 폭발 범위 내 파티클 처리
@@ -102,38 +129,34 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
       if (existingParticle) {
         switch (existingParticle.type) {
           case 'SAND':
-            if (intensity > 0.2) {
-              // 증발 확률 (1% - 거의 증발하지 않음)
-              if (Math.random() < 0.01) {
-                grid[y][x] = null; // 증발
-              } else {
-                // 격렬한 비산 효과 - 수류탄처럼 강력하게
-                const angle = Math.atan2(dy, dx);
-                const force = intensity * 4 + 1.5; // 훨씬 더 강한 폭발력
-                // 위쪽으로 더 많이 튀어오르도록 조정
-                const adjustedVy = Math.sin(angle) * force - 1; // 위쪽 편향
-                scatteredParticles.push({
-                  particle: { ...existingParticle, vx: Math.cos(angle) * force, vy: adjustedVy },
-                  x: x,
-                  y: y,
-                  vx: Math.cos(angle) * force,
-                  vy: adjustedVy
-                });
-                grid[y][x] = null; // 원래 위치에서 제거
-              }
+            // 모래는 더 쉽게 파이도록 임계값 낮춤
+            if (intensity > 0.1) {
+              // 모든 모래가 사방으로 비산 (양이 보존됨)
+              const angle = Math.atan2(dy, dx);
+              const force = intensity * 5 + 2; // 더욱 강한 폭발력
+              // 위쪽으로 더 많이 튀어오르도록 조정
+              const adjustedVy = Math.sin(angle) * force - 1.5; // 위쪽 편향 강화
+              scatteredParticles.push({
+                particle: { ...existingParticle, vx: Math.cos(angle) * force, vy: adjustedVy },
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * force,
+                vy: adjustedVy
+              });
+              grid[y][x] = null; // 원래 위치에서 제거 (구멍 생성)
             }
             break;
           case 'WATER':
-            if (intensity > 0.15) {
-              // 증발 확률 (2% - 거의 증발하지 않음)
-              if (Math.random() < 0.02) {
-                grid[y][x] = null; // 증발
+            if (intensity > 0.1) {
+              // 물의 30% 증발 효과
+              if (Math.random() < 0.3) {
+                grid[y][x] = null; // 30% 확률로 증발
               } else {
-                // 격렬한 비산 효과 - 물은 더욱 격렬하게 튀어오름
+                // 나머지 70%는 사방으로 퍼져나감
                 const angle = Math.atan2(dy, dx);
-                const force = intensity * 5 + 2; // 물은 더욱 강하게 튀어오름
+                const force = intensity * 6 + 2.5; // 물은 더욱 강하게 퍼짐
                 // 위쪽으로 더 많이 튀어오르도록 조정
-                const adjustedVy = Math.sin(angle) * force - 1.5; // 위쪽 편향 더 강하게
+                const adjustedVy = Math.sin(angle) * force - 2; // 위쪽 편향 더 강하게
                 scatteredParticles.push({
                   particle: { ...existingParticle, vx: Math.cos(angle) * force, vy: adjustedVy },
                   x: x,
@@ -147,7 +170,7 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
             break;
           case 'STONE':
             // 벽은 덜 파임 (강한 폭발력에만 파괴)
-            if (intensity > 0.7) {
+            if (intensity > 0.8) {
               grid[y][x] = null;
             }
             break;
@@ -161,12 +184,12 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
       }
       
       // 허공에 강력한 폭발 효과 파티클 생성
-      if (!existingParticle && Math.random() < intensity * 1.2) {
+      if (!existingParticle && Math.random() < intensity * 1.5) {
         const particleTypes = ['EXPLOSION_WHITE', 'EXPLOSION_YELLOW', 'EXPLOSION_RED'] as const;
         const randomType = particleTypes[Math.floor(Math.random() * particleTypes.length)];
         grid[y][x] = {
           type: randomType,
-          lifetime: Math.floor(30 + Math.random() * 60), // 더 오래 지속
+          lifetime: Math.floor(40 + Math.random() * 80), // 더 오래 지속되는 폭발 효과
         };
       }
     }
@@ -175,8 +198,8 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
   // 2단계: 비산된 파티클들을 새로운 위치에 배치
   for (const scattered of scatteredParticles) {
     // 격렬한 폭발에 맞게 더 멀리 배치
-    const newX = Math.round(scattered.x + scattered.vx * 0.8);
-    const newY = Math.round(scattered.y + scattered.vy * 0.8);
+    const newX = Math.round(scattered.x + scattered.vx * 1.2); // 더 멀리 날아감
+    const newY = Math.round(scattered.y + scattered.vy * 1.2);
     
     // 경계 체크 및 빈 공간 확인
     if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT && !grid[newY][newX]) {
@@ -185,7 +208,7 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
     } else {
       // 새 위치에 놓을 수 없으면 가까운 빈 공간 찾기
       let placed = false;
-      for (let radius = 1; radius <= 2 && !placed; radius++) {
+      for (let radius = 1; radius <= 3 && !placed; radius++) { // 탐색 범위 확장
         for (let dy = -radius; dy <= radius && !placed; dy++) {
           for (let dx = -radius; dx <= radius && !placed; dx++) {
             const tryX = scattered.x + dx;
