@@ -7,14 +7,14 @@ export interface Particle {
   resting?: boolean;
 }
 
-export const PARTICLE_TYPE: Record<Material, { color: number }> = {
+export interface MaterialConfig {
+  color: number;
+}
+
+export const PARTICLE_TYPE: Record<Material, MaterialConfig> = {
   SAND: { color: 0xd2b48c },
   WATER: { color: 0x3399ff },
   STONE: { color: 0x888888 },
 };
 
-export const CELL_SIZE = 4;
-export const GRID_WIDTH = 120; // 480 / 4
-export const GRID_HEIGHT = 90; // 360 / 4
-export const WIDTH = CELL_SIZE * GRID_WIDTH;
-export const HEIGHT = CELL_SIZE * GRID_HEIGHT; 
+export const MATERIALS: Material[] = ['SAND', 'WATER', 'STONE']; 
