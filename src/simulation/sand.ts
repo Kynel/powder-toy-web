@@ -7,6 +7,38 @@ function isEmpty(grid: (Particle | null)[][], newGrid: (Particle | null)[][], x:
 }
 
 export function handleSand(grid: (Particle | null)[][], newGrid: (Particle | null)[][], x: number, y: number, p: Particle): void {
+  // 속도가 있는 경우 (폭발로 날아간 파티클)
+  if (p.vx !== undefined && p.vy !== undefined && (Math.abs(p.vx) > 0.1 || Math.abs(p.vy) > 0.1)) {
+    // 속도 방향으로 이동 시도
+    const newX = Math.round(x + p.vx);
+    const newY = Math.round(y + p.vy);
+    
+    if (isEmpty(grid, newGrid, newX, newY)) {
+      // 속도 감소 (공기저항/마찰) - 격렬한 폭발 효과 유지
+      const newVx = p.vx * 0.96; // 더 오래 날아가도록
+      const newVy = p.vy * 0.96 + 0.05; // 중력 적용하면서 천천히 감속
+      
+      // 속도가 너무 작아지면 제거, 아니면 유지
+      const newParticle = Math.abs(newVx) < 0.03 && Math.abs(newVy) < 0.03
+        ? { type: p.type }
+        : { ...p, vx: newVx, vy: newVy };
+      
+      newGrid[newY][newX] = newParticle;
+      return;
+    } else {
+      // 충돌 시 격렬하게 튕김 - 수류탄 폭발처럼
+      const newParticle = { 
+        ...p, 
+        vx: -p.vx * 0.6, // 반대 방향으로 강하게 튕김
+        vy: -Math.abs(p.vy) * 0.5 // 위쪽으로 강하게 튕김
+      };
+      
+      // 원래 자리에 머물면서 속도 적용
+      newGrid[y][x] = newParticle;
+      return;
+    }
+  }
+  
   // 아래로 이동 (빈 공간)
   if (isEmpty(grid, newGrid, x, y + 1)) {
     newGrid[y + 1][x] = { ...p };

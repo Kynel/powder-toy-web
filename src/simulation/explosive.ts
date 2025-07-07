@@ -1,5 +1,10 @@
 import { Particle } from '../types/particle';
 import { GRID_WIDTH, GRID_HEIGHT } from '../config/constants';
+import { isInBounds, shuffle } from '../utils/common';
+
+function isEmpty(grid: (Particle | null)[][], newGrid: (Particle | null)[][], x: number, y: number): boolean {
+  return isInBounds(x, y, GRID_WIDTH, GRID_HEIGHT) && !grid[y][x] && !newGrid[y][x];
+}
 
 export function handleExplosive(
   grid: (Particle | null)[][], 
@@ -8,9 +13,9 @@ export function handleExplosive(
   y: number, 
   particle: Particle
 ): void {
-  // 도화선이 설정되지 않았다면 초기화 (마우스 클릭 후 3초 후 폭발)
+  // 도화선이 설정되지 않았다면 초기화 (마우스 클릭 후 2.5초 후 폭발)
   if (particle.fuse === undefined) {
-    particle.fuse = 180; // 약 3초 (60fps 기준)
+    particle.fuse = 150; // 약 2.5초 (60fps 기준)
   }
 
   // 도화선 감소
@@ -19,8 +24,29 @@ export function handleExplosive(
   // 폭발 시간이 되었다면 폭발
   if (particle.fuse <= 0) {
     explode(newGrid, x, y);
-  } else {
-    // 아직 폭발하지 않았다면 그 자리에 남아있음
+    return;
+  }
+
+  // 중력 적용 - 아래로 이동 (빈 공간)
+  if (isEmpty(grid, newGrid, x, y + 1)) {
+    newGrid[y + 1][x] = { ...particle };
+    return;
+  }
+  
+  // 대각선 아래로 이동
+  for (const dx of shuffle([-1, 1])) {
+    const nx = x + dx;
+    const ny = y + 1;
+    
+    // 대각선 아래가 빈 공간이면 이동
+    if (isEmpty(grid, newGrid, nx, ny)) {
+      newGrid[ny][nx] = { ...particle };
+      return;
+    }
+  }
+
+  // 이동할 수 없으면 제자리에 (도화선은 계속 줄어듦)
+  if (!newGrid[y][x]) {
     newGrid[y][x] = { ...particle };
   }
 }
@@ -57,8 +83,10 @@ export function handleExplosionParticle(
 }
 
 function explode(grid: (Particle | null)[][], centerX: number, centerY: number): void {
-  const explosionRadius = 8;
+  const explosionRadius = 10; // 더 강력한 폭발 범위
+  const scatteredParticles: Array<{particle: Particle, x: number, y: number, vx: number, vy: number}> = [];
   
+  // 1단계: 폭발 범위 내 파티클 처리
   for (let dy = -explosionRadius; dy <= explosionRadius; dy++) {
     for (let dx = -explosionRadius; dx <= explosionRadius; dx++) {
       const x = centerX + dx;
@@ -74,15 +102,47 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
       if (existingParticle) {
         switch (existingParticle.type) {
           case 'SAND':
-            // 모래는 홈을 파임 (강한 폭발력)
-            if (intensity > 0.3) {
-              grid[y][x] = null;
+            if (intensity > 0.2) {
+              // 증발 확률 (1% - 거의 증발하지 않음)
+              if (Math.random() < 0.01) {
+                grid[y][x] = null; // 증발
+              } else {
+                // 격렬한 비산 효과 - 수류탄처럼 강력하게
+                const angle = Math.atan2(dy, dx);
+                const force = intensity * 4 + 1.5; // 훨씬 더 강한 폭발력
+                // 위쪽으로 더 많이 튀어오르도록 조정
+                const adjustedVy = Math.sin(angle) * force - 1; // 위쪽 편향
+                scatteredParticles.push({
+                  particle: { ...existingParticle, vx: Math.cos(angle) * force, vy: adjustedVy },
+                  x: x,
+                  y: y,
+                  vx: Math.cos(angle) * force,
+                  vy: adjustedVy
+                });
+                grid[y][x] = null; // 원래 위치에서 제거
+              }
             }
             break;
           case 'WATER':
-            // 물은 첨벙거리는 효과 (완전히 제거)
-            if (intensity > 0.2) {
-              grid[y][x] = null;
+            if (intensity > 0.15) {
+              // 증발 확률 (2% - 거의 증발하지 않음)
+              if (Math.random() < 0.02) {
+                grid[y][x] = null; // 증발
+              } else {
+                // 격렬한 비산 효과 - 물은 더욱 격렬하게 튀어오름
+                const angle = Math.atan2(dy, dx);
+                const force = intensity * 5 + 2; // 물은 더욱 강하게 튀어오름
+                // 위쪽으로 더 많이 튀어오르도록 조정
+                const adjustedVy = Math.sin(angle) * force - 1.5; // 위쪽 편향 더 강하게
+                scatteredParticles.push({
+                  particle: { ...existingParticle, vx: Math.cos(angle) * force, vy: adjustedVy },
+                  x: x,
+                  y: y,
+                  vx: Math.cos(angle) * force,
+                  vy: adjustedVy
+                });
+                grid[y][x] = null; // 원래 위치에서 제거
+              }
             }
             break;
           case 'STONE':
@@ -100,14 +160,42 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
         }
       }
       
-      // 허공에 폭발 효과 파티클 생성
-      if (!existingParticle && Math.random() < intensity * 0.8) {
+      // 허공에 강력한 폭발 효과 파티클 생성
+      if (!existingParticle && Math.random() < intensity * 1.2) {
         const particleTypes = ['EXPLOSION_WHITE', 'EXPLOSION_YELLOW', 'EXPLOSION_RED'] as const;
         const randomType = particleTypes[Math.floor(Math.random() * particleTypes.length)];
         grid[y][x] = {
           type: randomType,
-          lifetime: Math.floor(20 + Math.random() * 40),
+          lifetime: Math.floor(30 + Math.random() * 60), // 더 오래 지속
         };
+      }
+    }
+  }
+  
+  // 2단계: 비산된 파티클들을 새로운 위치에 배치
+  for (const scattered of scatteredParticles) {
+    // 격렬한 폭발에 맞게 더 멀리 배치
+    const newX = Math.round(scattered.x + scattered.vx * 0.8);
+    const newY = Math.round(scattered.y + scattered.vy * 0.8);
+    
+    // 경계 체크 및 빈 공간 확인
+    if (newX >= 0 && newX < GRID_WIDTH && newY >= 0 && newY < GRID_HEIGHT && !grid[newY][newX]) {
+      // 속도를 그대로 유지해서 계속 날아가도록
+      grid[newY][newX] = scattered.particle;
+    } else {
+      // 새 위치에 놓을 수 없으면 가까운 빈 공간 찾기
+      let placed = false;
+      for (let radius = 1; radius <= 2 && !placed; radius++) {
+        for (let dy = -radius; dy <= radius && !placed; dy++) {
+          for (let dx = -radius; dx <= radius && !placed; dx++) {
+            const tryX = scattered.x + dx;
+            const tryY = scattered.y + dy;
+            if (tryX >= 0 && tryX < GRID_WIDTH && tryY >= 0 && tryY < GRID_HEIGHT && !grid[tryY][tryX]) {
+              grid[tryY][tryX] = scattered.particle;
+              placed = true;
+            }
+          }
+        }
       }
     }
   }
