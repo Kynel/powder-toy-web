@@ -174,6 +174,20 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
               grid[y][x] = null;
             }
             break;
+          case 'WOOD':
+            // 나무는 돌보다 약하고 불에 타기 쉬움
+            if (intensity > 0.4) {
+              // 50% 확률로 화염으로 변환, 50% 확률로 파괴
+              if (Math.random() < 0.5) {
+                grid[y][x] = {
+                  type: 'FIRE',
+                  lifetime: Math.floor(100 + Math.random() * 150), // 나무에서 나온 화염은 더 오래 지속
+                };
+              } else {
+                grid[y][x] = null; // 완전 파괴
+              }
+            }
+            break;
           case 'EXPLOSIVE':
             // 다른 폭발물에 연쇄 폭발
             if (intensity > 0.5) {
@@ -185,12 +199,22 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
       
       // 허공에 강력한 폭발 효과 파티클 생성
       if (!existingParticle && Math.random() < intensity * 1.5) {
-        const particleTypes = ['EXPLOSION_WHITE', 'EXPLOSION_YELLOW', 'EXPLOSION_RED'] as const;
-        const randomType = particleTypes[Math.floor(Math.random() * particleTypes.length)];
-        grid[y][x] = {
-          type: randomType,
-          lifetime: Math.floor(40 + Math.random() * 80), // 더 오래 지속되는 폭발 효과
-        };
+        // 화염과 폭발 효과를 섞어서 생성
+        if (Math.random() < 0.4) {
+          // 40% 확률로 화염 생성
+          grid[y][x] = {
+            type: 'FIRE',
+            lifetime: Math.floor(80 + Math.random() * 100), // 화염은 더 오래 지속
+          };
+        } else {
+          // 60% 확률로 폭발 효과 생성
+          const particleTypes = ['EXPLOSION_WHITE', 'EXPLOSION_YELLOW', 'EXPLOSION_RED'] as const;
+          const randomType = particleTypes[Math.floor(Math.random() * particleTypes.length)];
+          grid[y][x] = {
+            type: randomType,
+            lifetime: Math.floor(40 + Math.random() * 80), // 더 오래 지속되는 폭발 효과
+          };
+        }
       }
     }
   }
