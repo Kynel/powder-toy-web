@@ -132,16 +132,27 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
             // 모래는 더 쉽게 파이도록 임계값 낮춤
             if (intensity > 0.1) {
               // 모든 모래가 사방으로 비산 (양이 보존됨)
-              const angle = Math.atan2(dy, dx);
-              const force = intensity * 5 + 2; // 더욱 강한 폭발력
-              // 위쪽으로 더 많이 튀어오르도록 조정
-              const adjustedVy = Math.sin(angle) * force - 1.5; // 위쪽 편향 강화
+              const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.4; // 약간의 랜덤 각도
+              const baseForce = intensity * 4 + 1.5; // 기본 폭발력
+              const randomForce = baseForce * (0.8 + Math.random() * 0.4); // 80~120% 변동
+              
+              // 실제 포물선 운동을 위한 초기 속도 계산
+              const initialVx = Math.cos(angle) * randomForce;
+              const initialVy = Math.sin(angle) * randomForce - 0.5; // 약간 위쪽 편향
+              
               scatteredParticles.push({
-                particle: { ...existingParticle, vx: Math.cos(angle) * force, vy: adjustedVy },
+                particle: { 
+                  ...existingParticle, 
+                  vx: initialVx, 
+                  vy: initialVy,
+                  // 모래는 무겁고 빨리 떨어짐
+                  airResistance: 0.02, // 공기저항 계수
+                  gravity: 0.08 // 중력 계수
+                },
                 x: x,
                 y: y,
-                vx: Math.cos(angle) * force,
-                vy: adjustedVy
+                vx: initialVx,
+                vy: initialVy
               });
               grid[y][x] = null; // 원래 위치에서 제거 (구멍 생성)
             }
@@ -153,16 +164,27 @@ function explode(grid: (Particle | null)[][], centerX: number, centerY: number):
                 grid[y][x] = null; // 30% 확률로 증발
               } else {
                 // 나머지 70%는 사방으로 퍼져나감
-                const angle = Math.atan2(dy, dx);
-                const force = intensity * 6 + 2.5; // 물은 더욱 강하게 퍼짐
-                // 위쪽으로 더 많이 튀어오르도록 조정
-                const adjustedVy = Math.sin(angle) * force - 2; // 위쪽 편향 더 강하게
+                const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.3; // 더 일정한 각도
+                const baseForce = intensity * 5 + 2; // 물은 더 강하게 튀어나감
+                const randomForce = baseForce * (0.9 + Math.random() * 0.2); // 90~110% 변동
+                
+                // 물은 더 멀리, 더 높이 튀어나감
+                const initialVx = Math.cos(angle) * randomForce;
+                const initialVy = Math.sin(angle) * randomForce - 1.0; // 더 높이 튀어오름
+                
                 scatteredParticles.push({
-                  particle: { ...existingParticle, vx: Math.cos(angle) * force, vy: adjustedVy },
+                  particle: { 
+                    ...existingParticle, 
+                    vx: initialVx, 
+                    vy: initialVy,
+                    // 물은 가볍고 공기저항 큼
+                    airResistance: 0.03, // 더 큰 공기저항
+                    gravity: 0.06 // 더 작은 중력 영향
+                  },
                   x: x,
                   y: y,
-                  vx: Math.cos(angle) * force,
-                  vy: adjustedVy
+                  vx: initialVx,
+                  vy: initialVy
                 });
                 grid[y][x] = null; // 원래 위치에서 제거
               }

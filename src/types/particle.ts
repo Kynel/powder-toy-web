@@ -10,6 +10,8 @@ export interface Particle {
   fireExposure?: number; // 나무가 불에 노출된 시간
   burning?: boolean; // 나무가 연소 중인지 여부
   burnTime?: number; // 연소 지속 시간
+  airResistance?: number; // 공기저항 계수
+  gravity?: number; // 중력 계수
 }
 
 export interface MaterialConfig {
