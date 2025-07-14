@@ -102,12 +102,12 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
               })
             );
           } else if (currentMaterial === 'WOOD') {
-            // 나무는 3x3 크기로 생성
+            // 나무는 6x6 크기로 생성
             return prevGrid.map((row, j) =>
               row.map((cell, i) => {
                 if (
-                  i >= x - 1 && i <= x + 1 &&
-                  j >= y - 1 && j <= y + 1 &&
+                  i >= x - 2 && i <= x + 3 &&
+                  j >= y - 2 && j <= y + 3 &&
                   i >= 0 && i < GRID_WIDTH &&
                   j >= 0 && j < GRID_HEIGHT
                 ) {
@@ -177,7 +177,7 @@ export const CanvasStage: React.FC<CanvasStageProps> = ({ currentMaterial, onExp
           if (currentMaterial === 'EXPLOSIVE') {
             spawnInterval = 10; // 폭발물은 가장 느리게
           } else if (currentMaterial === 'WOOD') {
-            spawnInterval = 6; // 나무는 중간 속도 (3x3 크기이므로)
+            spawnInterval = 12; // 나무는 더 느리게 (6x6 크기이므로)
           } else if (currentMaterial === 'STONE') {
             spawnInterval = 4; // 돌은 약간 느리게 (2x2 크기이므로)
           }
