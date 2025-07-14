@@ -103,11 +103,11 @@ function handleWood(
     }
     
     // 연기 생성 (위쪽으로)
-    if (Math.random() < 0.3 && y > 0 && !grid[y - 1][x] && !newGrid[y - 1][x]) {
+    if (Math.random() < 0.15 && y > 0 && !grid[y - 1][x] && !newGrid[y - 1][x]) {
       newGrid[y - 1][x] = {
         type: 'SMOKE',
-        vx: (Math.random() - 0.5) * 0.5, // 약간의 좌우 움직임
-        vy: -0.5 - Math.random() * 0.5, // 위로 올라감
+        vx: 0, // 좌우 움직임 제거
+        vy: -0.5, // 위로 올라감
       };
     }
     
